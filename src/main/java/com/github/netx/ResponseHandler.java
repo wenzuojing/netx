@@ -26,7 +26,6 @@ public class ResponseHandler {
 
     public void onReceived(byte[] data) {
         this.data = data;
-        this.notifyAll();
         this.countDownLatch.countDown();
     }
 

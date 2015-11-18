@@ -15,7 +15,10 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -141,12 +144,14 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
                             ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
                             ch.pipeline().addLast(new MessageEncoder());
                             ch.pipeline().addLast(new MessageDecoder());
-                            ch.pipeline().addLast(new NettyInboundHandler(transportManager, NettyClient.this , true ));
+                            ch.pipeline().addLast(new NettyInboundHandler(transportManager, NettyClient.this, true));
                         }
                     });
 
-            Channel channel = bootstrap.connect(host, port).sync().channel();
-            transportManager.add(new NettyTransport( IDUtils.id() ,channel));
+            for(int i = 0 ; i < Runtime.getRuntime().availableProcessors() * 2 ; i++ ){
+                Channel channel = bootstrap.connect(host, port).sync().channel();
+                transportManager.add(new NettyTransport( IDUtils.id() ,channel));
+            }
         } catch (Exception e) {
             LOGGER.error("Startup fail." , e );
             shutdown();
@@ -162,7 +167,8 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
 
     @Override
     public ResponseHandler send(byte[] data) {
-        Transport transport = transportManager.all().iterator().next();
+
+        Transport transport = getOneTransport(transportManager.all());
         if (transport == null) {
             throw new IllegalStateException("Not available transport.");
         }
@@ -172,6 +178,11 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
         responseMessageHandler.putResponseHandler(message.getId(), future);
         transport.sendMessage(message);
         return future;
+    }
+
+    private Transport getOneTransport(Collection<Transport> all) {
+        Random random = new Random();
+        return new ArrayList<>(all).get(random.nextInt(all.size()));
     }
 
     public void connect() {

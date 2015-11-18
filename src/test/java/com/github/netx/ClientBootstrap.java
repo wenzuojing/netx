@@ -13,9 +13,9 @@ public class ClientBootstrap implements MessageHandler {
         Client client = builder.build();
         client.startup();
 
-        ResponseHandler future = client.send("hi".getBytes());
+        ResponseHandler responseHandler = client.send("hi".getBytes());
 
-        System.out.println(new String(future.get()));
+        System.out.println(new String(responseHandler.get()));
     }
 
 
