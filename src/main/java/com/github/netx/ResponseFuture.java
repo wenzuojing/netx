@@ -5,7 +5,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * Created by wens on 15/10/31.
  */
-public class ResponseHandler {
+public class ResponseFuture {
 
     private final long timeout;
     private final long bindTransportId;
@@ -18,7 +18,7 @@ public class ResponseHandler {
     private CountDownLatch countDownLatch;
 
 
-    public ResponseHandler(long timeout, long bindTransportId) {
+    public ResponseFuture(long timeout, long bindTransportId) {
         this.timeout = timeout;
         this.bindTransportId = bindTransportId;
         this.countDownLatch = new CountDownLatch(1);

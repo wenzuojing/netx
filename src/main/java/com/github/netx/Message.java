@@ -5,8 +5,7 @@ package com.github.netx;
  */
 public class Message {
 
-    public final static Message DEAFAULT_REQUEST_HEARBEAT_MESSAGE = new Message(0, null, true, true);
-    public final static Message DEAFAULT_RESPONSE_HEARBEAT_MESSAGE = new Message(0, null, true, false);
+    public final static Message DEFAULT_REQUEST_HEARBEAT_MESSAGE = new Message(0, null, true, true);
 
     private final long id;
 

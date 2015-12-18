@@ -4,7 +4,6 @@ import com.github.netx.Message;
 import com.github.netx.Transport;
 import com.github.netx.TransportClosedListener;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 
 import java.net.SocketAddress;
 import java.util.Collection;

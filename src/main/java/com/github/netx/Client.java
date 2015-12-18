@@ -7,7 +7,7 @@ public interface Client {
 
     void startup();
 
-    ResponseHandler send(byte[] data);
+    ResponseFuture send(byte[] data);
 
     void shutdown();
 

@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * Created by wens on 15-10-29.
  */
 public class NettyClient implements Client, InnerMessageHandler, Runnable {
-    private static final Logger LOGGER = LoggerUtils.getLogger();
+    private final Logger logger = LoggerUtils.getLogger();
     private final NettyTransportManager transportManager = new NettyTransportManager();
 
     private Bootstrap bootstrap;
@@ -35,7 +34,6 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
     private ScheduledExecutorService heartbeatService;
 
     private ResponseMessageHandler responseMessageHandler;
-    private MessageHandler messageHandler;
     private HeartbeatMessageFactory heartbeatMessageFactory;
     private boolean heartbeatEnable = false;
     private int heartbeatInterval = 15000;
@@ -46,21 +44,11 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
     private int workerThreads = 16;
 
 
-    public NettyClient(String host, int port, MessageHandler messageHandler, HeartbeatMessageFactory heartbeatMessageFactory) {
+    public NettyClient(String host, int port, HeartbeatMessageFactory heartbeatMessageFactory) {
         this.host = host;
         this.port = port;
-        this.messageHandler = messageHandler;
         this.heartbeatMessageFactory = heartbeatMessageFactory;
         this.responseMessageHandler = new DefaultResponseHandler();
-    }
-
-
-    public MessageHandler getMessageHandler() {
-        return messageHandler;
-    }
-
-    public void setMessageHandler(MessageHandler messageHandler) {
-        this.messageHandler = messageHandler;
     }
 
     public HeartbeatMessageFactory getHeartbeatMessageFactory() {
@@ -125,12 +113,12 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
             heartbeatMessageFactory = new DefaultHeartbeatMessageFactory();
         }
 
-        if (messageHandler == null) {
+        /*if (messageHandler == null) {
             throw new IllegalStateException("messageHandler must not be null,please set the messageHandler.");
-        }
+        }*/
 
         if (bootstrap != null) {
-            LOGGER.error("Bootstrap was running.");
+            logger.error("Bootstrap was running.");
             System.exit(-1);
         }
         workerGroup = new NioEventLoopGroup(workerThreads, Threads.makeThreadFactory("Server/worker"));
@@ -148,12 +136,12 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
                         }
                     });
 
-            for(int i = 0 ; i < Runtime.getRuntime().availableProcessors() * 2 ; i++ ){
+            for (int i = 0; i < Runtime.getRuntime().availableProcessors() * 2; i++) {
                 Channel channel = bootstrap.connect(host, port).sync().channel();
-                transportManager.add(new NettyTransport( IDUtils.id() ,channel));
+                transportManager.add(new NettyTransport(IDUtils.id(), channel));
             }
         } catch (Exception e) {
-            LOGGER.error("Startup fail." , e );
+            logger.error("Startup fail.", e);
             shutdown();
             System.exit(-1);
         }
@@ -166,7 +154,7 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
     }
 
     @Override
-    public ResponseHandler send(byte[] data) {
+    public ResponseFuture send(byte[] data) {
 
         Transport transport = getOneTransport(transportManager.all());
         if (transport == null) {
@@ -174,7 +162,7 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
         }
 
         Message message = new Message(IDUtils.id(), data, false, true);
-        ResponseHandler future = new ResponseHandler(30000, transport.getId());
+        ResponseFuture future = new ResponseFuture(30000, transport.getId());
         responseMessageHandler.putResponseHandler(message.getId(), future);
         transport.sendMessage(message);
         return future;
@@ -192,7 +180,7 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
         try {
             bootstrap.connect(host, port).sync();
         } catch (Throwable t) {
-            LOGGER.error(t.getMessage(), t);
+            logger.error(t.getMessage(), t);
         }
     }
 
@@ -200,7 +188,7 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
 
         try {
             if (heartbeatService != null) {
-                LOGGER.info("Shutdown heartbeat service");
+                logger.info("Shutdown heartbeat service");
                 heartbeatService.shutdown();
                 heartbeatService = null;
             }
@@ -209,13 +197,13 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
         }
 
         try {
-            LOGGER.info("Shutdown channel");
+            logger.info("Shutdown channel");
             transportManager.close();
         } catch (Exception e) {
 
         }
 
-        LOGGER.info("Shutdown worker group");
+        logger.info("Shutdown worker group");
         workerGroup.shutdownGracefully();
 
         workerGroup = null;
@@ -228,10 +216,10 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
         try {
             Collection<Transport> transports = transportManager.all();
 
-            LOGGER.debug("[HEARTBEAT] Active transports = " + transports.size());
+            logger.debug("[HEARTBEAT] Active transports = " + transports.size());
 
             if (transports.isEmpty() && autoConnectRetry) {
-                LOGGER.debug("[HEARTBEAT] retry connect to = " + host + ":" + port);
+                logger.debug("[HEARTBEAT] retry connect to = " + host + ":" + port);
                 connect();
             }
 
@@ -239,7 +227,7 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
                 if (s.isActive() && s.isWritable()) {
                     byte[] heartbeatMessage = heartbeatMessageFactory.createHeartbeatMessage();
 
-                    Message message = Message.DEAFAULT_REQUEST_HEARBEAT_MESSAGE;
+                    Message message = Message.DEFAULT_REQUEST_HEARBEAT_MESSAGE;
 
                     if (heartbeatMessage != null) {
                         message = new Message(0, heartbeatMessage, true, true);
@@ -248,29 +236,13 @@ public class NettyClient implements Client, InnerMessageHandler, Runnable {
                 }
             }
         } catch (Throwable t) {
-            LOGGER.error(t.getMessage(), t);
+            logger.error(t.getMessage(), t);
         }
     }
 
 
     @Override
     public void handleMessage(Channel channel, Message message) {
-
-        if (messageHandler != null && message.isRequest()) {
-
-            byte[] responseData;
-            boolean heartbeat = false;
-            if (message.isHeartbeat()) {
-                heartbeat = true;
-                responseData = messageHandler.handleHeartbeatMessage(message.getData());
-            } else {
-                responseData = messageHandler.handleNormalMessage(message.getData());
-            }
-            channel.write(new Message(message.getId(), responseData, heartbeat, false));
-            return;
-        }
-
-
         if (!message.isRequest()) {
             responseMessageHandler.receive(message);
         }

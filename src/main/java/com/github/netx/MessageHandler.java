@@ -5,8 +5,7 @@ package com.github.netx;
  */
 public interface MessageHandler {
 
-    byte[] handleNormalMessage(byte[] data);
+    byte[] receivedMessage(byte[] data);
 
-    byte[] handleHeartbeatMessage(byte[] data);
 
 }

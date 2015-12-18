@@ -16,33 +16,30 @@ import org.slf4j.Logger;
  * Created by wens on 15-10-29.
  */
 public class NettyServer implements Server, InnerMessageHandler {
-    private static final Logger LOGGER = LoggerUtils.getLogger();
-    private final TransportManager transportManager = new NettyTransportManager();
+    private final Logger logger = LoggerUtils.getLogger();
 
     private ServerBootstrap bootstrap;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
     private ChannelFuture bindFuture;
 
-    private ResponseMessageHandler responseMessageHandler;
-    private MessageHandler messageHandler;
+    private ServerMessageHandler messageHandler;
     private String bind = "0.0.0.0";
     private int port = 1980;
     private int workerThreads = 16;
 
 
-    public NettyServer(String bind, int port, MessageHandler messageHandler) {
+    public NettyServer(String bind, int port, ServerMessageHandler messageHandler) {
         this.bind = bind;
         this.port = port;
         this.messageHandler = messageHandler;
-        this.responseMessageHandler = new DefaultResponseHandler();
     }
 
     public MessageHandler getMessageHandler() {
         return messageHandler;
     }
 
-    public void setMessageHandler(MessageHandler messageHandler) {
+    public void setMessageHandler(ServerMessageHandler messageHandler) {
         this.messageHandler = messageHandler;
     }
 
@@ -88,7 +85,7 @@ public class NettyServer implements Server, InnerMessageHandler {
                             ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
                             ch.pipeline().addLast(new MessageDecoder());
                             ch.pipeline().addLast(new MessageEncoder());
-                            ch.pipeline().addLast(new NettyInboundHandler(transportManager, NettyServer.this , false ));
+                            ch.pipeline().addLast(new NettyInboundHandler(null, NettyServer.this, false));
                         }
                     }).option(ChannelOption.SO_BACKLOG, 100)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
@@ -102,16 +99,16 @@ public class NettyServer implements Server, InnerMessageHandler {
 
     public synchronized void shutdown() {
         try {
-            LOGGER.info("Shutdown listener channel.");
+            logger.info("Shutdown listener channel.");
             bindFuture.channel().close().sync();
         } catch (Exception e) {
 
         }
 
-        LOGGER.info("Shutdown worker group.");
+        logger.info("Shutdown worker group.");
         workerGroup.shutdownGracefully();
 
-        LOGGER.info("Shutdown boss group.");
+        logger.info("Shutdown boss group.");
         bossGroup.shutdownGracefully();
 
 
@@ -125,32 +122,16 @@ public class NettyServer implements Server, InnerMessageHandler {
     public void handleMessage(Channel channel, Message message) {
 
         if (messageHandler != null && message.isRequest()) {
-
-            byte[] responseData;
-            boolean heartbeat = false;
             if (message.isHeartbeat()) {
-                heartbeat = true;
-                responseData = messageHandler.handleHeartbeatMessage(message.getData());
+                channel.write(new Message(message.getId(), null, true, false));
             } else {
-                responseData = messageHandler.handleNormalMessage(message.getData());
+                channel.write(new Message(message.getId(), messageHandler.receivedMessage(message.getData()), false, false));
             }
-            channel.write(new Message(message.getId(), responseData, heartbeat, false));
-            return;
-        }
-
-
-        if (!message.isRequest()) {
-            responseMessageHandler.receive(message);
         }
     }
 
     @Override
     public void handleFail(Channel channel, Throwable throwable) {
-        NettyTransportManager nettyTransportManager = (NettyTransportManager) this.transportManager;
-        Transport transport = nettyTransportManager.get(channel);
-        if (transport == null) {
-            return;
-        }
-        responseMessageHandler.fail(transport.getId(), throwable);
+        logger.warn("Received fail : channel={}", channel, throwable);
     }
 }

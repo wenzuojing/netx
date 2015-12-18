@@ -1,23 +1,22 @@
 package com.github.netx;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Created by wens on 15-10-29.
  */
 public interface TransportManager {
 
-    public void add(Transport transport);
+    void add(Transport transport);
 
-    public Transport get(long id);
+    Transport get(long id);
 
-    public Collection<Transport> all();
+    Collection<Transport> all();
 
-    public void close();
+    void close();
 
-    public int size();
+    int size();
 
-    public boolean isEmpty();
+    boolean isEmpty();
 
 }

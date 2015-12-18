@@ -7,7 +7,7 @@ import com.github.netx.netty.NettyClient;
  */
 public class ClientBuilder {
     private String host;
-    private int port = 1980;
+    private int port = 8080;
     private int threads = 16;
     private MessageHandler messageHandler;
     private boolean heartbeatEnable = false;
@@ -56,7 +56,7 @@ public class ClientBuilder {
     }
 
     public Client build() {
-        NettyClient client = new NettyClient(host, port, messageHandler, heartbeatMessageFactory);
+        NettyClient client = new NettyClient(host, port, heartbeatMessageFactory);
         client.setWorkerThreads(threads);
         client.setHeartbeatEnable(heartbeatEnable);
         client.setHeartbeatInterval(heartbeatInterval);

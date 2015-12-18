@@ -14,15 +14,15 @@ import org.slf4j.Logger;
  */
 public class NettyInboundHandler extends ChannelInboundHandlerAdapter {
 
-    private static final Logger LOGGER = LoggerUtils.getLogger();
+    private final Logger logger = LoggerUtils.getLogger();
     private final TransportManager transportManager;
     private final InnerMessageHandler innerMessageHandler;
-    private final boolean isClient ;
+    private final boolean isClient;
 
-    public NettyInboundHandler(TransportManager transportManager, InnerMessageHandler innerMessageHandler , boolean isClient) {
+    public NettyInboundHandler(TransportManager transportManager, InnerMessageHandler innerMessageHandler, boolean isClient) {
         this.transportManager = transportManager;
         this.innerMessageHandler = innerMessageHandler;
-        this.isClient = isClient ;
+        this.isClient = isClient;
     }
 
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -41,7 +41,7 @@ public class NettyInboundHandler extends ChannelInboundHandlerAdapter {
     }
 
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        LOGGER.debug(cause.getMessage(), cause);
+        logger.debug(cause.getMessage(), cause);
         if (this.innerMessageHandler != null) {
             this.innerMessageHandler.handleFail(ctx.channel(), cause);
         }
@@ -52,18 +52,20 @@ public class NettyInboundHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
-        if(isClient){
-           return ;
+        if (isClient) {
+            return;
         }
         long id = IDUtils.id();
         NettyTransport s = new NettyTransport(id, ctx.channel());
-        transportManager.add(s);
-        LOGGER.debug("channelActive - " + s);
+        if (transportManager != null) {
+            transportManager.add(s);
+        }
+        logger.debug("channelActive - " + s);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        LOGGER.debug("channelInactive - " + ctx.channel());
+        logger.debug("channelInactive - " + ctx.channel());
     }
 }

@@ -4,27 +4,21 @@ package com.github.netx;
 /**
  * Created by wens on 15-10-29.
  */
-public class ServerBootstrap implements MessageHandler {
+public class ServerBootstrap implements ServerMessageHandler {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         ServerBuilder builder = new ServerBuilder();
         builder.bind("0.0.0.0").port(1980).messageHandler(new ServerBootstrap());
-
         Server server = builder.build();
         server.startup();
+        Thread.sleep(Integer.MAX_VALUE);
     }
 
 
     @Override
-    public byte[] handleNormalMessage(byte[] data) {
-        System.out.println("Receive a message : " + new String(data));
-        return "RECEIVED".getBytes();
+    public byte[] receivedMessage(byte[] data) {
+        return data;
     }
 
-    @Override
-    public byte[] handleHeartbeatMessage(byte[] data) {
-        System.out.println("Receive a heartbeat message : " + new String(data));
-        return "OK".getBytes();
-    }
 
 }

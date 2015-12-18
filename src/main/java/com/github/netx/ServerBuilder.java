@@ -7,9 +7,9 @@ import com.github.netx.netty.NettyServer;
  */
 public class ServerBuilder {
     private String bind = "0.0.0.0";
-    private int port = 1980;
+    private int port = 8080;
     private int threads = 16;
-    private MessageHandler messageHandler;
+    private ServerMessageHandler messageHandler;
     private boolean checksumEnable = false;
 
     public ServerBuilder bind(String bind) {
@@ -33,7 +33,7 @@ public class ServerBuilder {
         return this;
     }
 
-    public ServerBuilder messageHandler(MessageHandler messageHandler) {
+    public ServerBuilder messageHandler(ServerMessageHandler messageHandler) {
         this.messageHandler = messageHandler;
         return this;
     }

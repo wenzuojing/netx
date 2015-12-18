@@ -7,7 +7,8 @@ import com.github.netx.util.LoggerUtils;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -15,15 +16,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class NettyTransportManager implements TransportManager {
 
-    private static final Logger LOGGER = LoggerUtils.getLogger();
+    private final Logger logger = LoggerUtils.getLogger();
     private final Map<Long, Transport> transports = new ConcurrentHashMap<Long, Transport>();
-
-    private Random random = new Random();
 
     private TransportClosedListener closedListener = new TransportClosedListener() {
         @Override
         public void onClosed(Transport transport) {
-            LOGGER.debug("[REMOVE] transport {} was closed." + transport);
+            logger.debug("[REMOVE] transport {} was closed." + transport);
             remove(transport);
         }
     };

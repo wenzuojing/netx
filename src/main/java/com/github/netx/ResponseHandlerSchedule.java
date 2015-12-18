@@ -7,20 +7,20 @@ import java.util.concurrent.ScheduledFuture;
  */
 public class ResponseHandlerSchedule {
 
-    private ResponseHandler delegate;
+    private ResponseFuture delegate;
 
     private ScheduledFuture<?> scheduledFuture;
 
-    public ResponseHandlerSchedule(ResponseHandler responseHandler, ScheduledFuture<?> scheduledFuture) {
+    public ResponseHandlerSchedule(ResponseFuture responseHandler, ScheduledFuture<?> scheduledFuture) {
         this.delegate = responseHandler;
         this.scheduledFuture = scheduledFuture;
     }
 
-    public ResponseHandler getDelegate() {
+    public ResponseFuture getDelegate() {
         return delegate;
     }
 
-    public void setDelegate(ResponseHandler delegate) {
+    public void setDelegate(ResponseFuture delegate) {
         this.delegate = delegate;
     }
 

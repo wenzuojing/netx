@@ -5,7 +5,7 @@ package com.github.netx;
  */
 public interface ResponseMessageHandler {
 
-    void putResponseHandler(long messageId, ResponseHandler responseHandler);
+    void putResponseHandler(long messageId, ResponseFuture responseFuture);
 
     void receive(Message message);
 

@@ -18,26 +18,26 @@ public class DefaultResponseHandler implements ResponseMessageHandler {
     }
 
     @Override
-    public void putResponseHandler(final long messageId, final ResponseHandler responseHandler) {
+    public void putResponseHandler(final long messageId, final ResponseFuture responseFuture) {
 
         ScheduledFuture<?> scheduledFuture = scheduledExecutorService.schedule(new Runnable() {
             @Override
             public void run() {
                 ResponseHandlerSchedule responseHandlerSchedule = responseHandlers.remove(messageId);
                 if (responseHandlerSchedule != null) {
-                    ResponseHandler handler = responseHandlerSchedule.getDelegate();
+                    ResponseFuture handler = responseHandlerSchedule.getDelegate();
                     handler.onFailed(new TimeoutException("Timeout : " + handler.getTimeout()));
                 }
             }
-        }, responseHandler.getTimeout(), TimeUnit.MILLISECONDS);
-        responseHandlers.put(messageId, new ResponseHandlerSchedule(responseHandler, scheduledFuture));
+        }, responseFuture.getTimeout(), TimeUnit.MILLISECONDS);
+        responseHandlers.put(messageId, new ResponseHandlerSchedule(responseFuture, scheduledFuture));
     }
 
     @Override
     public void receive(Message message) {
         ResponseHandlerSchedule responseHandlerSchedule = responseHandlers.get(message.getId());
         if (responseHandlerSchedule != null) {
-            ResponseHandler responseFuture = responseHandlerSchedule.getDelegate();
+            ResponseFuture responseFuture = responseHandlerSchedule.getDelegate();
             responseHandlers.remove(message.getId());
             responseFuture.onReceived(message.getData());
         }
