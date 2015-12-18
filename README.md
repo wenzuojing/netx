@@ -1,6 +1,5 @@
 # netx
-netx是一个基于tcp网络通讯组件
-
+Netx is a based on the TCP network communication components, inspired by [hydra](https://github.com/lamfire/hydra)
 ### USAGE
 Server 
 ```java
